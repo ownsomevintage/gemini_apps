@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Voyage & Port — Interactive Packing Manifest</title>
+
+  <!-- iOS & Android Standalone Full-Screen Web App (PWA) Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Voyage Manifest" />
+  <meta name="application-name" content="Voyage Manifest" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <!-- Fallback SVG Icon & Dynamic Canvas PNG Icon / Manifest Links (Hydrated on Load) -->
+  <link id="apple-touch-icon-link" rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23091526'/%3E%3Ccircle cx='90' cy='90' r='58' fill='none' stroke='%23E11D48' stroke-width='10'/%3E%3Cpolygon points='116,64 102,102 64,116 78,78' fill='%2338BDF8'/%3E%3C/svg%3E" />
+  <link id="favicon-link" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23091526'/%3E%3Ccircle cx='90' cy='90' r='58' fill='none' stroke='%23E11D48' stroke-width='10'/%3E%3Cpolygon points='116,64 102,102 64,116 78,78' fill='%2338BDF8'/%3E%3C/svg%3E" />
+  <link id="pwa-manifest-link" rel="manifest" href="" />
+
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono for crisp editorial & technical aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            navy: {
+              800: '#102338',
+              900: '#091526',
+              950: '#050C16',
+            },
+            scarlet: {
+              500: '#E11D48',
+              600: '#BE123C',
+            },
+            ocean: {
+              500: '#0284C7',
+              600: '#0369A1',
+            },
+            sand: {
+              50: '#FAF9F5',
+              100: '#F3F1E9',
+              200: '#E6E2D6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #FAF9F5;
+      color: #091526;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    button, a, input, select, textarea, label {
+      touch-action: manipulation;
+    }
+
+    /* Hide scrollbar for horizontal pill carousels on mobile */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Safe area padding for iPhone Notch / Dynamic Island & Home Indicator */
+    .pt-safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .sticky-safe-top {
+      top: 0;
+      padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+    }
+    .px-safe {
+      padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+      padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+    .pb-safe {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    }
+    .pb-sheet-safe {
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Standalone PWA Mode Enhancements */
+    @media all and (display-mode: standalone) {
+      .pwa-standalone-badge {
+        display: inline-flex !important;
+      }
+    }
+
+    /* Smooth custom checkbox & strikethrough animations */
+    .item-label-text {
+      position: relative;
+      transition: color 0.2s ease;
+    }
+    
+    .checkbox-bounce {
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .checkbox-bounce:active {
+      transform: scale(0.86);
+    }
+
+    /* Progress bar shimmer effect */
+    @keyframes progressPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+    .progress-fill {
+      transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F3F1E9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Print-friendly Overrides */
+    @media print {
+      body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        font-size: 11pt;
+        padding-bottom: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border: 1px solid #000000 !important;
+        box-shadow: none !important;
+        margin-bottom: 16px !important;
+        background: #FFFFFF !important;
+      }
+      .print-grid {
+        display: block !important;
+      }
+      .sticky-dashboard {
+        position: static !important;
+        box-shadow: none !important;
+        border-bottom: 2px solid #000000 !important;
+      }
+      .print-checkbox {
+        border: 1.5px solid #000 !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 md:pb-8 selection:bg-scarlet-500 selection:text-white">
+
+  <!-- Non-Sticky Editorial Title & Desktop Utility Bar (Includes iPhone Notch Safe-Area Top Padding) -->
+  <div class="bg-sand-50 border-b border-slate-200/70 pt-safe-top">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3.5 pb-3 sm:py-4 px-safe">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 sm:gap-3">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <!-- Compass / Ship Wheel SVG -->
+              <svg class="w-5 h-5 text-scarlet-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="text-base sm:text-2xl font-extrabold tracking-tight text-navy-900 leading-tight">
+                  VOYAGE &amp; PORT MANIFEST
+                </h1>
+                <span class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-scarlet-500/10 text-scarlet-600 font-semibold border border-scarlet-500/20">
+                  Cruise Edition
+                </span>
+                <span class="pwa-standalone-badge hidden text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 font-semibold border border-emerald-500/30">
+                  App Mode
+                </span>
+              </div>
+              <p class="hidden sm:block text-xs sm:text-sm text-slate-600 mt-0.5">
+                Smart interactive checklist with port compliance, tech/sketch kit &amp; excursion readiness
+              </p>
+            </div>
+          </div>
+
+          <!-- Mobile Quick Install & Fold Buttons -->
+          <div class="no-print md:hidden flex items-center gap-1.5 shrink-0">
+            <button id="btn-mobile-install-header" type="button" class="min-h-[44px] px-2.5 rounded-xl border border-ocean-500/30 bg-ocean-500/10 active:scale-95 text-xs font-semibold text-ocean-600 flex items-center gap-1 shadow-2xs" title="Save App Icon to Phone">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              <span>App Icon</span>
+            </button>
+            <button id="btn-mobile-expand-collapse" type="button" class="min-h-[44px] px-3 rounded-xl border border-slate-300 bg-white active:scale-95 text-xs font-semibold text-navy-900 flex items-center gap-1.5 shadow-2xs">
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+              </svg>
+              <span id="mobile-expand-collapse-label">Fold All</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop Utility Actions (Hidden on Mobile, moved to Thumb-Zone Bottom Sheet) -->
+        <div class="no-print hidden md:flex flex-wrap items-center gap-2">
+          <button id="btn-install-app" type="button" class="min-h-[40px] text-xs font-semibold px-3.5 py-2 rounded-xl border border-ocean-500/30 bg-ocean-500/10 hover:bg-ocean-500/20 active:scale-95 text-ocean-600 transition flex items-center gap-1.5 shadow-2xs" title="Save App Icon to Phone or Download HTML">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span>Install / Phone Icon</span>
+          </button>
+
+          <button id="btn-expand-collapse" type="button" class="min-h-[40px] text-xs font-medium px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 transition flex items-center gap-1.5 shadow-2xs">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+            </svg>
+            <span id="expand-collapse-label">Collapse All</span>
+          </button>
+
+          <button id="btn-print" type="button" class="min-h-[40px] text-xs font-medium px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 transition flex items-center gap-1.5 shadow-2xs" title="Print Checklist">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            <span>Print</span>
+          </button>
+
+          <button id="btn-check-all" type="button" class="min-h-[40px] text-xs font-medium px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-900 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Check All</span>
+          </button>
+
+          <button id="btn-uncheck-all" type="button" class="min-h-[40px] text-xs font-medium px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-900 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span>Uncheck All</span>
+          </button>
+
+          <button id="btn-restore-defaults" type="button" class="min-h-[40px] text-xs font-medium px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-800 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            <span>Restore Defaults</span>
+          </button>
+
+          <button id="btn-run-diagnostics" type="button" class="min-h-[40px] text-xs font-mono font-semibold px-3 py-2 rounded-xl border border-emerald-300 bg-emerald-50/90 hover:bg-emerald-100 active:scale-95 text-emerald-800 transition flex items-center gap-1.5 shadow-2xs" title="Run Interactive Button & Handler Diagnostics">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="diagnostics-badge-label">Self-Test: 100% OK</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sleek Sticky Compact Progress Header & Snap-Scroll Category Chips (Notch Safe-Area Aware) -->
+  <header class="sticky-dashboard sticky sticky-safe-top z-30 bg-sand-50/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs transition-all">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-2 pt-1 sm:py-3.5 px-safe">
+      <div class="bg-navy-900 text-white rounded-2xl p-3 sm:p-4.5 shadow-md border border-navy-800">
+        
+        <!-- Compact Status & Progress Count Row -->
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-white/10 text-sky-300 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+              <span id="status-badge-text">Pre-Departure</span>
+            </span>
+            <span id="total-units-pill" class="text-xs font-mono text-slate-300 hidden sm:inline truncate">
+              • 0 total units
+            </span>
+          </div>
+
+          <div class="flex items-baseline justify-end shrink-0">
+            <span id="overall-stats-text" class="font-mono text-xs sm:text-base font-bold text-white tracking-tight">
+              0 / 0 packed — 0%
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Animated Progress Track -->
+        <div class="w-full h-2.5 sm:h-3.5 bg-navy-950 rounded-full overflow-hidden p-0.5 border border-white/10" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="overall-progress-aria">
+          <div id="overall-progress-bar" class="progress-fill h-full rounded-full bg-gradient-to-r from-sky-400 via-teal-400 to-emerald-400" style="width: 0%"></div>
+        </div>
+
+        <!-- Horizontally Scrollable Pill Chips on Mobile / 5-Col Grid on Desktop -->
+        <div id="header-mini-categories" class="no-scrollbar mt-2.5 pt-2 border-t border-white/10 flex lg:grid lg:grid-cols-5 gap-2 overflow-x-auto snap-x snap-mandatory -mx-1 px-1">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+
+    <!-- Interactive Control Bar: Search, Desktop Filters, Desktop Quick Add (No Print) -->
+    <section class="no-print mb-4 sm:mb-6 space-y-3">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+        
+        <!-- Desktop Filter Views Segmented Control (On mobile, also mirrored in Thumb-Zone Bar) -->
+        <div class="hidden md:flex lg:col-span-5 bg-sand-100 p-1 rounded-xl border border-slate-200/90">
+          <button type="button" data-filter="all" class="filter-btn min-h-[40px] flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 bg-navy-900 text-white shadow-xs active:scale-95">
+            <span>All Items</span>
+            <span id="count-all" class="font-mono text-[11px] px-1.5 py-0.2 rounded-md bg-white/20">0</span>
+          </button>
+          <button type="button" data-filter="unpacked" class="filter-btn min-h-[40px] flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-navy-900 active:scale-95">
+            <span>Remaining</span>
+            <span id="count-unpacked" class="font-mono text-[11px] px-1.5 py-0.2 rounded-md bg-slate-200/80 text-slate-700">0</span>
+          </button>
+          <button type="button" data-filter="packed" class="filter-btn min-h-[40px] flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-navy-900 active:scale-95">
+            <span>Packed</span>
+            <span id="count-packed" class="font-mono text-[11px] px-1.5 py-0.2 rounded-md bg-slate-200/80 text-slate-700">0</span>
+          </button>
+        </div>
+
+        <!-- Search Input (16px font on mobile to prevent iOS Safari zoom) -->
+        <div class="lg:col-span-4 relative">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search manifest (passport, reef, camera)..."
+            class="w-full min-h-[44px] pl-10 pr-11 py-2.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm text-navy-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500 transition shadow-2xs"
+          />
+          <button id="clear-search-btn" type="button" class="hidden absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 w-9 h-9 flex items-center justify-center rounded-lg active:scale-95" title="Clear search">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Desktop Toggle Add Item / Category Drawer Button -->
+        <div class="hidden md:flex lg:col-span-3 justify-end gap-2">
+          <button id="btn-toggle-add-panel" type="button" class="w-full min-h-[44px] py-2.5 px-4 bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white font-semibold text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>Add Item or Category</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Desktop Expandable Quick-Add Item & New Category Drawer -->
+      <div id="add-panel" class="hidden bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-md transition-all">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Left: Add New Item to Category -->
+          <form id="form-add-item" class="lg:col-span-8 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-mono uppercase tracking-wider font-bold text-navy-900 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-ocean-500"></span>
+                Add Custom Packing Item
+              </h3>
+              <span class="text-[11px] text-slate-400">Saved automatically</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+              <div class="sm:col-span-5">
+                <label for="add-item-name" class="sr-only">Item Name</label>
+                <input
+                  id="add-item-name"
+                  type="text"
+                  required
+                  placeholder="Item name (e.g., Magnetic Cabin Hooks)"
+                  class="w-full min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                />
+              </div>
+              <div class="sm:col-span-4">
+                <label for="add-item-category" class="sr-only">Select Category</label>
+                <select
+                  id="add-item-category"
+                  class="w-full min-h-[44px] px-3 py-2 border border-slate-300 rounded-xl text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                ></select>
+              </div>
+              <div class="sm:col-span-3 flex gap-2">
+                <div class="w-20 shrink-0">
+                  <label for="add-item-qty" class="sr-only">Quantity</label>
+                  <input
+                    id="add-item-qty"
+                    type="number"
+                    min="1"
+                    max="99"
+                    value="1"
+                    class="w-full min-h-[44px] px-2.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm font-mono text-center focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                    title="Quantity"
+                  />
+                </div>
+                <button type="submit" class="flex-1 min-h-[44px] bg-navy-900 hover:bg-navy-800 active:scale-95 text-white font-semibold text-sm px-3 py-2 rounded-xl transition">
+                  Add
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+              <div class="sm:col-span-8">
+                <input
+                  id="add-item-note"
+                  type="text"
+                  placeholder="Optional note or compliance tip (e.g., Pack in carry-on daypack, no surge protection)"
+                  class="w-full min-h-[44px] px-3.5 py-2 border border-slate-200 bg-slate-50 rounded-xl text-base sm:text-xs text-slate-700 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                />
+              </div>
+              <label class="sm:col-span-4 flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-xl border border-amber-200 bg-amber-50/70 text-xs font-semibold text-amber-900 cursor-pointer select-none">
+                <input id="add-item-alert" type="checkbox" class="w-4 h-4 rounded accent-amber-600" />
+                <span>Port / Ship Alert Flag</span>
+              </label>
+            </div>
+          </form>
+
+          <!-- Right: Create New Category -->
+          <form id="form-add-category" class="lg:col-span-4 lg:border-l lg:border-slate-200 lg:pl-6 space-y-3 flex flex-col justify-between">
+            <div>
+              <h3 class="text-xs font-mono uppercase tracking-wider font-bold text-navy-900 flex items-center gap-1.5 mb-3">
+                <span class="w-2 h-2 rounded-full bg-scarlet-500"></span>
+                Create New Category
+              </h3>
+              <div class="flex gap-2">
+                <input
+                  id="add-category-title"
+                  type="text"
+                  required
+                  placeholder="e.g., Stateroom Extras"
+                  class="flex-1 min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-scarlet-500"
+                />
+                <button type="submit" class="min-h-[44px] bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white font-semibold text-sm px-4 py-2 rounded-xl transition shrink-0">
+                  Create
+                </button>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed">
+              Tip: Tap any category header to fold/expand it, or use the quick-add input inside any category card.
+            </p>
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty Filter / Search State -->
+    <div id="empty-state" class="hidden bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center my-6 shadow-2xs">
+      <div class="w-12 h-12 rounded-2xl bg-sand-100 text-navy-900 mx-auto flex items-center justify-center mb-3">
+        <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <h3 id="empty-state-title" class="text-base font-bold text-navy-900">No matching items found</h3>
+      <p id="empty-state-subtitle" class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
+        Try clearing your search filter or switching views to see all items in your manifest.
+      </p>
+      <button id="btn-reset-filters" type="button" class="mt-4 min-h-[44px] px-5 py-2.5 rounded-xl bg-navy-900 text-white text-xs font-semibold hover:bg-navy-800 active:scale-95 transition">
+        Show All Items
+      </button>
+    </div>
+
+    <!-- Categories Grid -->
+    <div id="categories-container" class="print-grid grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
+      <!-- Dynamically populated by JavaScript -->
+    </div>
+
+    <!-- Port & Vessel Advisory Footer Note -->
+    <footer class="mt-10 pt-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-slate-500">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+        <span>All checklist updates, custom items, and quantities are saved automatically to local storage.</span>
+        <button id="btn-footer-install" type="button" class="no-print inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 font-mono text-[11px] font-semibold hover:bg-sky-100 active:scale-95 transition">
+          <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span>Save to Phone / Offline HTML</span>
+        </button>
+        <button id="btn-footer-diagnostics" type="button" class="no-print inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono text-[11px] font-semibold hover:bg-emerald-100 active:scale-95 transition">
+          <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Verify All Buttons</span>
+        </button>
+      </div>
+      <div class="font-mono text-[11px] text-slate-400">
+        PORT COMPLIANCE READY • NO CAMOUFLAGE • CRUISE-SAFE POWER
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- Fixed Thumb-Zone Bottom Navigation & Action Bar (Mobile Only, Safe-Area Inset Aware) -->
+  <nav aria-label="Mobile Quick Actions" class="no-print md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 shadow-[0_-6px_24px_rgba(9,21,38,0.08)] pt-2 pb-safe px-safe">
+    <div class="flex items-center justify-between gap-2 max-w-md mx-auto">
+      
+      <!-- Segmented Filter Pills (44px min height) -->
+      <div class="flex-1 flex bg-sand-100 p-1 rounded-xl border border-slate-200/90">
+        <button type="button" data-filter="all" class="filter-btn min-h-[44px] flex-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-navy-900 text-white shadow-2xs active:scale-95">
+          <span>All</span>
+          <span id="mobile-count-all" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/20">0</span>
+        </button>
+        <button type="button" data-filter="unpacked" class="filter-btn min-h-[44px] flex-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-slate-600 active:scale-95">
+          <span>Left</span>
+          <span id="mobile-count-unpacked" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">0</span>
+        </button>
+        <button type="button" data-filter="packed" class="filter-btn min-h-[44px] flex-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-slate-600 active:scale-95">
+          <span>Done</span>
+          <span id="mobile-count-packed" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">0</span>
+        </button>
+      </div>
+
+      <!-- Prominent Floating-Style Quick Add Button (44px+) -->
+      <button id="btn-mobile-quick-add" type="button" class="min-w-[48px] min-h-[46px] px-3.5 rounded-xl bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 shrink-0" title="Add Item or Category">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span class="hidden xs:inline">Add</span>
+      </button>
+
+      <!-- More Actions Sheet Trigger (44x44px) -->
+      <button id="btn-mobile-more" type="button" class="min-w-[46px] min-h-[46px] rounded-xl border border-slate-200 bg-sand-50 hover:bg-slate-100 active:scale-95 text-navy-900 flex items-center justify-center shrink-0" title="More Actions">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Quick-Add Bottom Sheet Modal -->
+  <div id="mobile-add-sheet" class="no-print fixed inset-0 z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 pb-sheet-safe shadow-2xl border-t sm:border border-slate-200 max-h-[90vh] overflow-y-auto">
+      <!-- Drag Handle Visual Cue -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+      
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-navy-900">Add to Packing Manifest</h3>
+        <button id="mobile-add-sheet-close" type="button" class="min-w-[44px] min-h-[44px] -mr-2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-xl active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Add Item Form (16px inputs) -->
+      <form id="form-sheet-add-item" class="space-y-3.5">
+        <div>
+          <label for="sheet-item-name" class="block text-xs font-mono uppercase text-slate-600 mb-1">Item Name</label>
+          <input id="sheet-item-name" type="text" required placeholder="e.g., Magnetic Cabin Wall Hooks" class="w-full min-h-[44px] px-3.5 py-2.5 border border-slate-300 rounded-xl text-base text-navy-900 focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-2">
+            <label for="sheet-item-category" class="block text-xs font-mono uppercase text-slate-600 mb-1">Category</label>
+            <select id="sheet-item-category" class="w-full min-h-[44px] px-3 py-2.5 border border-slate-300 rounded-xl text-base bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-ocean-500"></select>
+          </div>
+          <div>
+            <label for="sheet-item-qty" class="block text-xs font-mono uppercase text-slate-600 mb-1">Qty</label>
+            <input id="sheet-item-qty" type="number" min="1" max="99" value="1" required class="w-full min-h-[44px] px-3 py-2.5 border border-slate-300 rounded-xl text-base font-mono text-center text-navy-900 focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+          </div>
+        </div>
+
+        <div>
+          <label for="sheet-item-note" class="block text-xs font-mono uppercase text-slate-600 mb-1">Note / Compliance Tip (Optional)</label>
+          <input id="sheet-item-note" type="text" placeholder="e.g., Keep in carry-on daypack" class="w-full min-h-[44px] px-3.5 py-2.5 border border-slate-300 rounded-xl text-base text-navy-900 focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+        </div>
+
+        <label class="flex items-center gap-2.5 px-3.5 py-2.5 min-h-[44px] rounded-xl border border-amber-200 bg-amber-50/70 text-xs font-semibold text-amber-900 cursor-pointer select-none">
+          <input id="sheet-item-alert" type="checkbox" class="w-4 h-4 rounded accent-amber-600" />
+          <span>Mark as Port / Cruise Compliance Alert</span>
+        </label>
+
+        <button type="submit" class="w-full min-h-[48px] bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white font-bold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          <span>Add Packing Item</span>
+        </button>
+      </form>
+
+      <!-- Divider: Or Create Category -->
+      <div class="my-5 border-t border-slate-200 pt-4">
+        <form id="form-sheet-add-category" class="space-y-2.5">
+          <label for="sheet-category-title" class="block text-xs font-mono uppercase text-slate-600">Or Create New Category</label>
+          <div class="flex gap-2">
+            <input id="sheet-category-title" type="text" required placeholder="e.g., Stateroom Extras" class="flex-1 min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-900" />
+            <button type="submit" class="min-h-[44px] px-4 rounded-xl bg-navy-900 hover:bg-navy-800 active:scale-95 text-white text-xs font-bold transition shrink-0">
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile More Actions Bottom Sheet Modal -->
+  <div id="mobile-actions-sheet" class="no-print fixed inset-0 z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 pb-sheet-safe shadow-2xl border-t sm:border border-slate-200">
+      <!-- Drag Handle Visual Cue -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+      
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-base font-bold text-navy-900">Manifest Actions</h3>
+        <button id="mobile-actions-close" type="button" class="min-w-[44px] min-h-[44px] -mr-2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-xl active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-2.5">
+        <button id="sheet-btn-install" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-sky-200 bg-sky-50/90 hover:bg-sky-100 active:scale-95 text-left font-semibold text-sm text-navy-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-ocean-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span>Install App / Save Phone Icon</span>
+          </span>
+          <span class="text-xs font-mono text-ocean-600 font-bold">iOS / Android</span>
+        </button>
+
+        <button id="sheet-btn-expand-collapse" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-slate-200 bg-sand-50 hover:bg-slate-100 active:scale-95 text-left font-semibold text-sm text-navy-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+            </svg>
+            <span id="sheet-expand-collapse-text">Collapse All Categories</span>
+          </span>
+          <span class="text-xs font-mono text-slate-400">Accordion</span>
+        </button>
+
+        <button id="sheet-btn-print" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:scale-95 text-left font-semibold text-sm text-navy-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-ocean-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+            <span>Print Checklist Manifest</span>
+          </span>
+          <span class="text-xs font-mono text-slate-400">PDF / Paper</span>
+        </button>
+
+        <button id="sheet-btn-check-all" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 active:scale-95 text-left font-semibold text-sm text-emerald-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span>Check All Items as Packed</span>
+          </span>
+          <span class="text-xs font-mono text-emerald-700">100%</span>
+        </button>
+
+        <button id="sheet-btn-uncheck" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/80 hover:bg-amber-100 active:scale-95 text-left font-semibold text-sm text-amber-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            <span>Uncheck All Packed Items</span>
+          </span>
+          <span class="text-xs font-mono text-amber-700">Next Trip</span>
+        </button>
+
+        <button id="sheet-btn-restore" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 active:scale-95 text-left font-semibold text-sm text-rose-800 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            <span>Restore Pre-loaded Defaults</span>
+          </span>
+          <span class="text-xs font-mono text-rose-600">Reset</span>
+        </button>
+
+        <button id="sheet-btn-diagnostics" type="button" class="w-full min-h-[48px] px-4 py-3 rounded-xl border border-slate-200 bg-sand-50 hover:bg-slate-100 active:scale-95 text-left font-semibold text-sm text-navy-900 flex items-center justify-between">
+          <span class="flex items-center gap-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Run Button Self-Test Diagnostics</span>
+          </span>
+          <span class="text-xs font-mono text-emerald-700">Verify</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Bottom Sheet / Modal (No browser alert/confirm) -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 pb-sheet-safe shadow-2xl border-t sm:border border-slate-200 transform transition-all">
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+      <div class="flex items-start gap-3.5">
+        <div id="modal-icon-container" class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 id="modal-title" class="text-base font-bold text-navy-900">Confirm Action</h3>
+          <p id="modal-description" class="text-sm text-slate-600 mt-1 leading-relaxed">
+            Are you sure you want to proceed?
+          </p>
+        </div>
+      </div>
+      <div class="mt-6 flex items-center justify-end gap-2.5">
+        <button id="modal-cancel-btn" type="button" class="flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 active:scale-95 transition">
+          Cancel
+        </button>
+        <button id="modal-confirm-btn" type="button" class="flex-1 sm:flex-initial min-h-[44px] px-5 py-2.5 rounded-xl bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white text-sm font-semibold transition shadow-xs">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline Edit Item Bottom Sheet / Modal -->
+  <div id="edit-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 sm:p-6 pb-sheet-safe shadow-2xl border-t sm:border border-slate-200 max-h-[90vh] overflow-y-auto">
+      <!-- Drag Handle Visual Cue -->
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-navy-900">Edit Packing Item</h3>
+        <button id="edit-modal-close" type="button" class="min-w-[44px] min-h-[44px] -mr-2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-xl active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <form id="form-edit-item" class="space-y-4">
+        <input type="hidden" id="edit-cat-id" />
+        <input type="hidden" id="edit-item-id" />
+        <div>
+          <label for="edit-item-name" class="block text-xs font-mono uppercase text-slate-600 mb-1">Item Name</label>
+          <input id="edit-item-name" type="text" required class="w-full min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="edit-item-qty" class="block text-xs font-mono uppercase text-slate-600 mb-1">Quantity</label>
+            <input id="edit-item-qty" type="number" min="1" max="99" required class="w-full min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+          </div>
+          <div>
+            <label for="edit-item-category" class="block text-xs font-mono uppercase text-slate-600 mb-1">Category</label>
+            <select id="edit-item-category" class="w-full min-h-[44px] px-3 py-2 border border-slate-300 rounded-xl text-base sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-ocean-500"></select>
+          </div>
+        </div>
+        <div>
+          <label for="edit-item-note" class="block text-xs font-mono uppercase text-slate-600 mb-1">Detail / Note (Optional)</label>
+          <input id="edit-item-note" type="text" placeholder="Add reminder or compliance detail..." class="w-full min-h-[44px] px-3.5 py-2 border border-slate-300 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500" />
+        </div>
+        <label class="flex items-center gap-2.5 px-3.5 py-2.5 min-h-[44px] rounded-xl border border-amber-200 bg-amber-50/70 text-xs font-semibold text-amber-900 cursor-pointer select-none">
+          <input id="edit-item-alert" type="checkbox" class="w-4 h-4 rounded accent-amber-600" />
+          <span>Port / Cruise Compliance Alert Highlight</span>
+        </label>
+        <div class="pt-2 flex items-center justify-end gap-2.5">
+          <button id="edit-cancel-btn" type="button" class="flex-1 sm:flex-initial min-h-[44px] px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 active:scale-95 transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 sm:flex-initial min-h-[44px] px-5 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 active:scale-95 text-white text-sm font-semibold transition">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Install / Save App to Phone Home Screen Modal (Bottom Sheet on Mobile) -->
+  <div id="install-modal" class="no-print fixed inset-0 z-50 hidden items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-xs">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full p-5 sm:p-6 pb-sheet-safe shadow-2xl border-t sm:border border-slate-200 max-h-[92vh] overflow-y-auto">
+      <div class="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+          <img id="install-modal-icon-preview" alt="Voyage Manifest App Icon" class="w-12 h-12 rounded-2xl shadow-md border border-slate-200 shrink-0 bg-navy-900" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23091526'/%3E%3Ccircle cx='90' cy='90' r='58' fill='none' stroke='%23E11D48' stroke-width='10'/%3E%3Cpolygon points='116,64 102,102 64,116 78,78' fill='%2338BDF8'/%3E%3C/svg%3E" />
+          <div>
+            <h3 class="text-base font-extrabold text-navy-900">Save as Phone Home Screen App</h3>
+            <p class="text-xs text-slate-500">Full-screen iOS &amp; Android PWA with custom icon &amp; notch support</p>
+          </div>
+        </div>
+        <button id="install-modal-close" type="button" class="min-w-[44px] min-h-[44px] -mr-2 text-slate-400 hover:text-slate-600 flex items-center justify-center rounded-xl active:scale-95">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- One-Tap Offline HTML File Download Card -->
+      <div class="p-4 rounded-2xl bg-navy-900 text-white space-y-3 mb-4">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-scarlet-500 text-white font-bold">Step 1 • Standalone File</span>
+            <h4 class="text-sm font-bold mt-1.5">Download Self-Contained App File (.html)</h4>
+            <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
+              Includes your current checklist state, custom icon, and iOS full-screen PWA tags in a single file.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 pt-1">
+          <button id="btn-download-html" type="button" class="flex-1 min-h-[46px] px-4 py-2.5 rounded-xl bg-scarlet-500 hover:bg-scarlet-600 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span>Download Offline HTML App</span>
+          </button>
+          <button id="btn-native-pwa-prompt" type="button" class="hidden min-h-[46px] px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs sm:text-sm transition items-center justify-center gap-2">
+            <span>Install Now</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Two Easy Ways to Add Icon to iPhone / Android -->
+      <div class="space-y-3 text-xs text-slate-600">
+        <div class="p-3.5 rounded-xl border border-slate-200 bg-sand-50/70">
+          <h5 class="font-bold text-navy-900 flex items-center gap-2 text-xs mb-1.5">
+            <span class="w-5 h-5 rounded-full bg-ocean-500 text-white font-mono text-[11px] flex items-center justify-center shrink-0">A</span>
+            <span>iPhone / Android Full-Screen Web App (Recommended)</span>
+          </h5>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 leading-relaxed pl-1">
+            <li>Host the downloaded <code class="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded border">voyage-packing-manifest.html</code> on any free link (e.g., <span class="font-semibold text-navy-900">app.netlify.com/drop</span> or GitHub Pages) and open it in <span class="font-semibold text-navy-900">Safari</span>.</li>
+            <li>Tap the <span class="font-semibold text-navy-900">Share</span> button at the bottom of Safari, scroll down, and tap <span class="font-semibold text-navy-900">Add to Home Screen</span>.</li>
+            <li>Launch from your Home Screen—it opens full-screen without browser bars and remembers your progress!</li>
+          </ol>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-slate-200 bg-sand-50/70">
+          <h5 class="font-bold text-navy-900 flex items-center gap-2 text-xs mb-1.5">
+            <span class="w-5 h-5 rounded-full bg-navy-900 text-white font-mono text-[11px] flex items-center justify-center shrink-0">B</span>
+            <span>100% Local iPhone Files + Shortcuts (No Hosting Needed)</span>
+          </h5>
+          <ol class="list-decimal list-inside space-y-1 text-slate-600 leading-relaxed pl-1">
+            <li>Tap <span class="font-semibold text-navy-900">Download Offline HTML App</span> above and save it to your iPhone <span class="font-semibold text-navy-900">Files</span> app.</li>
+            <li>Open the iOS <span class="font-semibold text-navy-900">Shortcuts</span> app → tap <span class="font-mono font-bold">+</span> → <span class="font-semibold text-navy-900">Add Action</span> → choose <span class="font-semibold text-navy-900">Open File</span>.</li>
+            <li>Select your saved file, choose <span class="font-semibold text-navy-900">Safari</span>, tap the top menu arrow → <span class="font-semibold text-navy-900">Add to Home Screen</span>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end">
+        <button id="install-modal-done" type="button" class="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-navy-900 hover:bg-navy-800 active:scale-95 text-white text-xs sm:text-sm font-semibold transition">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtle Toast Notification (Positioned above Mobile Bottom Nav) -->
+  <div id="toast-container" class="no-print fixed bottom-20 md:bottom-5 right-4 left-4 sm:left-auto z-50 pointer-events-none flex flex-col items-center sm:items-end gap-2"></div>
+
+  <!-- Application Logic -->
+  <script>
+    (function () {
+      'use strict';
+
+      const STORAGE_KEY = 'voyage_packing_manifest_v1';
+
+      // Pre-loaded Smart Categories & Items tailored for a tropical/cruise getaway
+      const DEFAULT_MANIFEST = [
+        {
+          id: 'cat-docs',
+          title: 'Documents & Wallet',
+          subtitle: 'Embarkation, port rentals & island cash',
+          accent: 'sky',
+          collapsed: false,
+          items: [
+            { id: 'doc-1', name: 'Passport', qty: 1, packed: false, portAlert: false, note: 'Valid for at least 6 months beyond return date' },
+            { id: 'doc-2', name: "Physical Driver's License for port rentals", qty: 1, packed: false, portAlert: true, note: 'Required for Grand Turk & Bimini golf cart rentals' },
+            { id: 'doc-3', name: 'Boarding Pass / Cruise App ready', qty: 1, packed: false, portAlert: false, note: 'Complete check-in & terminal arrival time slot' },
+            { id: 'doc-4', name: 'Small Cash Bills ($1s / $5s / $10s)', qty: 1, packed: false, portAlert: false, note: 'For local beach stands, conch shacks, & port tips' },
+            { id: 'doc-5', name: 'Credit Cards (No Foreign Transaction Fee)', qty: 2, packed: false, portAlert: false, note: 'Primary + backup card kept separate' },
+            { id: 'doc-6', name: 'Travel Insurance Info & Emergency Contacts', qty: 1, packed: false, portAlert: false, note: 'Policy number saved offline + printed copy' }
+          ]
+        },
+        {
+          id: 'cat-beach',
+          title: 'Beach & Port Excursion Gear',
+          subtitle: 'Shore days, salt water & sun protection',
+          accent: 'teal',
+          collapsed: false,
+          items: [
+            { id: 'bch-1', name: 'Reef-safe Sunscreen (SPF 30–50)', qty: 2, packed: false, portAlert: true, note: 'Mineral / non-nano zinc oxide for coral protection' },
+            { id: 'bch-2', name: 'Water Shoes', qty: 1, packed: false, portAlert: false, note: 'Great for rocky entries & conch shell beaches' },
+            { id: 'bch-3', name: 'Polarized Sunglasses', qty: 2, packed: false, portAlert: false, note: 'Cuts Caribbean glare + spare pair' },
+            { id: 'bch-4', name: 'Sun Hat / Wide-Brim Cap', qty: 1, packed: false, portAlert: false, note: 'Wind-secure strap for open golf carts & top deck' },
+            { id: 'bch-5', name: 'Daypack / Waterproof Dry Bag', qty: 1, packed: false, portAlert: false, note: 'For shore excursions, camera protection & beach club' },
+            { id: 'bch-6', name: 'Heavy-duty Zip-top Bags', qty: 4, packed: false, portAlert: false, note: 'Keep phones, passports & wet swim gear separated' },
+            { id: 'bch-7', name: 'Collapsible / Insulated Water Bottle', qty: 1, packed: false, portAlert: false, note: 'Refill at ship water stations before going ashore' },
+            { id: 'bch-8', name: 'Microfiber Beach Towel / Towel Clips', qty: 2, packed: false, portAlert: false, note: 'Compact fast-drying backup for self-guided beach stops' }
+          ]
+        },
+        {
+          id: 'cat-clothing',
+          title: 'Clothing & Footwear',
+          subtitle: 'Deck days, evening dining & island compliance',
+          accent: 'rose',
+          collapsed: false,
+          items: [
+            { id: 'clo-1', name: 'Swimsuits / Swim Trunks', qty: 3, packed: false, portAlert: false, note: 'Rotate so one is always dry for the next port' },
+            { id: 'clo-2', name: 'Resort Casual / Dinner Outfits', qty: 5, packed: false, portAlert: false, note: 'Breathable coastal linens & evening attire' },
+            { id: 'clo-3', name: 'Red / Scarlet Night Outfit', qty: 1, packed: false, portAlert: false, note: 'Signature scarlet accent or full ensemble for deck party' },
+            { id: 'clo-4', name: 'Comfortable Walking Sandals & Sneakers', qty: 2, packed: false, portAlert: false, note: 'Broken-in footwear for pier walks & historic ports' },
+            { id: 'clo-5', name: 'Lightweight Evening Layer / Linen Shirt', qty: 2, packed: false, portAlert: false, note: 'For breezy ocean decks & air-conditioned venues' },
+            { id: 'clo-6', name: 'Undergarments & Socks', qty: 7, packed: false, portAlert: false, note: 'Plus extra pair for travel days' },
+            { id: 'clo-7', name: 'Sleepwear / Loungewear', qty: 2, packed: false, portAlert: false, note: 'Comfortable cabin & balcony morning wear' },
+            { id: 'clo-8', name: 'Island Port Compliance Check: Strictly No Camouflage', qty: 1, packed: false, portAlert: true, note: 'Camo clothing/bags are strictly prohibited in Caribbean ports (Turks & Caicos / Bahamas)' }
+          ]
+        },
+        {
+          id: 'cat-tech',
+          title: 'Tech & Sketch/Photo Kit',
+          subtitle: 'Optics, field sketching & cabin power',
+          accent: 'indigo',
+          collapsed: false,
+          items: [
+            { id: 'tch-1', name: 'Smartphone & Braided Charging Cable', qty: 1, packed: false, portAlert: false, note: 'Loaded with offline maps & ship navigator app' },
+            { id: 'tch-2', name: 'Earbuds & Charging Case', qty: 1, packed: false, portAlert: false, note: 'Beats Fit Pro for flights, workouts & balcony downtime' },
+            { id: 'tch-3', name: 'Camera + Lenses + Extra Batteries/SD Cards', qty: 1, packed: false, portAlert: false, note: 'Include microfiber lens cloths & weather protection' },
+            { id: 'tch-4', name: 'Portable Power Bank', qty: 1, packed: false, portAlert: false, note: 'Must be packed in carry-on luggage, never checked' },
+            { id: 'tch-5', name: 'Non-surge Protected Power Strip / Cruise-safe Adapter', qty: 1, packed: false, portAlert: true, note: 'CRITICAL: Must be non-surge protected to pass ship security' },
+            { id: 'tch-6', name: 'Sketchbook & Pencil/Fineliner Kit', qty: 1, packed: false, portAlert: false, note: '2H/2B/4B pencils, 0.1/0.3/0.8mm fineliners, kneaded eraser & compact travel pad' }
+          ]
+        },
+        {
+          id: 'cat-health',
+          title: 'Toiletries & Health',
+          subtitle: 'Personal care, sea remedies & recovery',
+          accent: 'emerald',
+          collapsed: false,
+          items: [
+            { id: 'hlt-1', name: 'Toothbrush, Toothpaste & Floss', qty: 1, packed: false, portAlert: false, note: '' },
+            { id: 'hlt-2', name: 'Deodorant & Travel Grooming Kit', qty: 1, packed: false, portAlert: false, note: 'TSA-compliant liquids if flying in carry-on' },
+            { id: 'hlt-3', name: 'Motion Sickness Remedies', qty: 1, packed: false, portAlert: false, note: 'Bonine / non-drowsy meclizine, ginger chews or acupressure bands' },
+            { id: 'hlt-4', name: 'Prescriptions & Basic First Aid Kit', qty: 1, packed: false, portAlert: false, note: 'Keep in original pharmacy bottles + bandages, electrolyte packets & pain reliever' },
+            { id: 'hlt-5', name: 'Aloe Vera / After-sun Cooling Lotion', qty: 1, packed: false, portAlert: false, note: 'Post-beach hydration' },
+            { id: 'hlt-6', name: 'Lip Balm with SPF 30+', qty: 2, packed: false, portAlert: false, note: 'Keep one in daypack and one in cabin' }
+          ]
+        }
+      ];
+
+      // Application State
+      let categories = [];
+      let currentFilter = 'all'; // 'all' | 'unpacked' | 'packed'
+      let searchQuery = '';
+      let pendingConfirmAction = null;
+      let lastDeletedUndo = null;
+
+      // DOM Elements
+      const categoriesContainer = document.getElementById('categories-container');
+      const headerMiniCategories = document.getElementById('header-mini-categories');
+      const overallStatsText = document.getElementById('overall-stats-text');
+      const overallProgressBar = document.getElementById('overall-progress-bar');
+      const overallProgressAria = document.getElementById('overall-progress-aria');
+      const statusBadge = document.getElementById('status-badge');
+      const statusBadgeText = document.getElementById('status-badge-text');
+      const totalUnitsPill = document.getElementById('total-units-pill');
+
+      const countAllEl = document.getElementById('count-all');
+      const countUnpackedEl = document.getElementById('count-unpacked');
+      const countPackedEl = document.getElementById('count-packed');
+      const mobileCountAllEl = document.getElementById('mobile-count-all');
+      const mobileCountUnpackedEl = document.getElementById('mobile-count-unpacked');
+      const mobileCountPackedEl = document.getElementById('mobile-count-packed');
+
+      const searchInput = document.getElementById('search-input');
+      const clearSearchBtn = document.getElementById('clear-search-btn');
+      const filterButtons = document.querySelectorAll('.filter-btn');
+
+      const btnToggleAddPanel = document.getElementById('btn-toggle-add-panel');
+      const addPanel = document.getElementById('add-panel');
+      const formAddItem = document.getElementById('form-add-item');
+      const addItemName = document.getElementById('add-item-name');
+      const addItemCategory = document.getElementById('add-item-category');
+      const addItemQty = document.getElementById('add-item-qty');
+      const addItemNote = document.getElementById('add-item-note');
+      const addItemAlert = document.getElementById('add-item-alert');
+      const formAddCategory = document.getElementById('form-add-category');
+      const addCategoryTitle = document.getElementById('add-category-title');
+
+      // Mobile Bottom Nav & Sheets
+      const btnMobileExpandCollapse = document.getElementById('btn-mobile-expand-collapse');
+      const mobileExpandCollapseLabel = document.getElementById('mobile-expand-collapse-label');
+      const btnMobileQuickAdd = document.getElementById('btn-mobile-quick-add');
+      const btnMobileMore = document.getElementById('btn-mobile-more');
+
+      const mobileAddSheet = document.getElementById('mobile-add-sheet');
+      const mobileAddSheetClose = document.getElementById('mobile-add-sheet-close');
+      const formSheetAddItem = document.getElementById('form-sheet-add-item');
+      const sheetItemName = document.getElementById('sheet-item-name');
+      const sheetItemCategory = document.getElementById('sheet-item-category');
+      const sheetItemQty = document.getElementById('sheet-item-qty');
+      const sheetItemNote = document.getElementById('sheet-item-note');
+      const sheetItemAlert = document.getElementById('sheet-item-alert');
+      const formSheetAddCategory = document.getElementById('form-sheet-add-category');
+      const sheetCategoryTitle = document.getElementById('sheet-category-title');
+
+      const mobileActionsSheet = document.getElementById('mobile-actions-sheet');
+      const mobileActionsClose = document.getElementById('mobile-actions-close');
+      const sheetBtnExpandCollapse = document.getElementById('sheet-btn-expand-collapse');
+      const sheetExpandCollapseText = document.getElementById('sheet-expand-collapse-text');
+      const sheetBtnPrint = document.getElementById('sheet-btn-print');
+      const sheetBtnCheckAll = document.getElementById('sheet-btn-check-all');
+      const sheetBtnUncheck = document.getElementById('sheet-btn-uncheck');
+      const sheetBtnRestore = document.getElementById('sheet-btn-restore');
+      const sheetBtnDiagnostics = document.getElementById('sheet-btn-diagnostics');
+      const sheetBtnInstall = document.getElementById('sheet-btn-install');
+
+      const emptyState = document.getElementById('empty-state');
+      const btnResetFilters = document.getElementById('btn-reset-filters');
+
+      const btnInstallApp = document.getElementById('btn-install-app');
+      const btnMobileInstallHeader = document.getElementById('btn-mobile-install-header');
+      const btnFooterInstall = document.getElementById('btn-footer-install');
+      const installModal = document.getElementById('install-modal');
+      const installModalClose = document.getElementById('install-modal-close');
+      const installModalDone = document.getElementById('install-modal-done');
+      const installModalIconPreview = document.getElementById('install-modal-icon-preview');
+      const btnDownloadHtml = document.getElementById('btn-download-html');
+      const btnNativePwaPrompt = document.getElementById('btn-native-pwa-prompt');
+
+      const btnExpandCollapse = document.getElementById('btn-expand-collapse');
+      const expandCollapseLabel = document.getElementById('expand-collapse-label');
+      const btnPrint = document.getElementById('btn-print');
+      const btnCheckAll = document.getElementById('btn-check-all');
+      const btnUncheckAll = document.getElementById('btn-uncheck-all');
+      const btnRestoreDefaults = document.getElementById('btn-restore-defaults');
+      const btnRunDiagnostics = document.getElementById('btn-run-diagnostics');
+      const btnFooterDiagnostics = document.getElementById('btn-footer-diagnostics');
+      const diagnosticsBadgeLabel = document.getElementById('diagnostics-badge-label');
+
+      // Modals
+      const confirmModal = document.getElementById('confirm-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalDescription = document.getElementById('modal-description');
+      const modalCancelBtn = document.getElementById('modal-cancel-btn');
+      const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+
+      const editModal = document.getElementById('edit-modal');
+      const editModalClose = document.getElementById('edit-modal-close');
+      const editCancelBtn = document.getElementById('edit-cancel-btn');
+      const formEditItem = document.getElementById('form-edit-item');
+      const editCatId = document.getElementById('edit-cat-id');
+      const editItemId = document.getElementById('edit-item-id');
+      const editItemName = document.getElementById('edit-item-name');
+      const editItemQty = document.getElementById('edit-item-qty');
+      const editItemCategory = document.getElementById('edit-item-category');
+      const editItemNote = document.getElementById('edit-item-note');
+      const editItemAlert = document.getElementById('edit-item-alert');
+
+      const toastContainer = document.getElementById('toast-container');
+
+      // Helper: Deep clone default data
+      function cloneDefaults() {
+        return JSON.parse(JSON.stringify(DEFAULT_MANIFEST));
+      }
+
+      // Helper: Determine if item has port/ship compliance alert status
+      function isItemPortAlert(item) {
+        if (typeof item.portAlert === 'boolean') return item.portAlert;
+        const nameLower = (item.name || '').toLowerCase();
+        return nameLower.includes('camouflage') || nameLower.includes('non-surge');
+      }
+
+      // Load state from LocalStorage
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              categories = parsed;
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to read packing list from localStorage:', err);
+        }
+        categories = cloneDefaults();
+      }
+
+      // Save state to LocalStorage
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
+        } catch (err) {
+          console.error('Failed to save packing list to localStorage:', err);
+        }
+      }
+
+      // Toast Notification Helper (Supports optional Undo action button)
+      function showToast(message, undoCallback) {
+        const toast = document.createElement('div');
+        toast.className = 'pointer-events-auto bg-navy-900 text-white text-xs font-medium px-3.5 py-2.5 rounded-xl shadow-lg border border-white/10 flex items-center gap-3 transition-all duration-300 opacity-0 translate-y-2';
+        toast.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+            <span>${escapeHtml(message)}</span>
+          </div>
+          ${undoCallback ? `<button type="button" class="toast-undo-btn px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-sky-300 font-mono text-[11px] font-bold uppercase tracking-wider transition active:scale-95">Undo</button>` : ''}
+        `;
+        toastContainer.appendChild(toast);
+
+        if (undoCallback) {
+          const undoBtn = toast.querySelector('.toast-undo-btn');
+          if (undoBtn) {
+            undoBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              undoCallback();
+              toast.remove();
+            });
+          }
+        }
+
+        requestAnimationFrame(() => {
+          toast.classList.remove('opacity-0', 'translate-y-2');
+        });
+
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => toast.remove(), 300);
+          }
+        }, undoCallback ? 4200 : 2500);
+      }
+
+      // Escape HTML to prevent XSS
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // Accent palette map for category progress bars and badges
+      function getAccentClasses(accent) {
+        const map = {
+          sky: {
+            bar: 'bg-sky-500',
+            badge: 'bg-sky-50 text-sky-800 border-sky-200',
+            dot: 'bg-sky-400'
+          },
+          teal: {
+            bar: 'bg-teal-500',
+            badge: 'bg-teal-50 text-teal-800 border-teal-200',
+            dot: 'bg-teal-400'
+          },
+          rose: {
+            bar: 'bg-scarlet-500',
+            badge: 'bg-rose-50 text-rose-800 border-rose-200',
+            dot: 'bg-rose-400'
+          },
+          indigo: {
+            bar: 'bg-indigo-500',
+            badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+            dot: 'bg-indigo-400'
+          },
+          emerald: {
+            bar: 'bg-emerald-500',
+            badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            dot: 'bg-emerald-400'
+          }
+        };
+        return map[accent] || map.sky;
+      }
+
+      // Populate Category Dropdowns (Add Panel, Mobile Sheet & Edit Modal)
+      function syncCategorySelects() {
+        const prevAddVal = addItemCategory ? addItemCategory.value : '';
+        const prevEditVal = editItemCategory ? editItemCategory.value : '';
+        const prevSheetVal = sheetItemCategory ? sheetItemCategory.value : '';
+
+        const optionsHtml = categories
+          .map(cat => `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.title)}</option>`)
+          .join('');
+
+        if (addItemCategory) {
+          addItemCategory.innerHTML = optionsHtml;
+          if (prevAddVal && categories.some(c => c.id === prevAddVal)) addItemCategory.value = prevAddVal;
+        }
+        if (editItemCategory) {
+          editItemCategory.innerHTML = optionsHtml;
+          if (prevEditVal && categories.some(c => c.id === prevEditVal)) editItemCategory.value = prevEditVal;
+        }
+        if (sheetItemCategory) {
+          sheetItemCategory.innerHTML = optionsHtml;
+          if (prevSheetVal && categories.some(c => c.id === prevSheetVal)) sheetItemCategory.value = prevSheetVal;
+        }
+      }
+
+      // Update Overall Completion Bar & Category Mini Indicators
+      function updateProgressUI() {
+        let totalItems = 0;
+        let packedItems = 0;
+        let totalQuantityUnits = 0;
+
+        categories.forEach(cat => {
+          cat.items.forEach(item => {
+            totalItems += 1;
+            totalQuantityUnits += Number(item.qty) || 1;
+            if (item.packed) packedItems += 1;
+          });
+        });
+
+        const unpackedItems = totalItems - packedItems;
+        const pct = totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0;
+
+        // Top Main Progress Bar
+        overallStatsText.textContent = `${packedItems} / ${totalItems} packed — ${pct}%`;
+        overallProgressBar.style.width = `${pct}%`;
+        overallProgressAria.setAttribute('aria-valuenow', String(pct));
+        totalUnitsPill.textContent = `• ${totalQuantityUnits} total units`;
+
+        // Update Status Badge based on progress percentage
+        if (totalItems === 0) {
+          statusBadgeText.textContent = 'Manifest Empty';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-white/10 text-slate-300 shrink-0';
+        } else if (pct === 0) {
+          statusBadgeText.textContent = 'Staging Manifest';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-white/10 text-sky-300 shrink-0';
+        } else if (pct < 50) {
+          statusBadgeText.textContent = 'Packing Active';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-sky-500/20 text-sky-300 shrink-0';
+        } else if (pct < 100) {
+          statusBadgeText.textContent = 'Final Checks';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-amber-500/20 text-amber-300 shrink-0';
+        } else {
+          statusBadgeText.textContent = '100% Ready to Sail';
+          statusBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono uppercase tracking-wider bg-emerald-500/20 text-emerald-300 shrink-0';
+        }
+
+        // Filter Tab Counters (Desktop & Mobile)
+        countAllEl.textContent = totalItems;
+        countUnpackedEl.textContent = unpackedItems;
+        countPackedEl.textContent = packedItems;
+        if (mobileCountAllEl) mobileCountAllEl.textContent = totalItems;
+        if (mobileCountUnpackedEl) mobileCountUnpackedEl.textContent = unpackedItems;
+        if (mobileCountPackedEl) mobileCountPackedEl.textContent = packedItems;
+
+        // Render Horizontally Scrollable Pill Chips on Mobile / Grid on Desktop
+        headerMiniCategories.innerHTML = categories.map(cat => {
+          const catTotal = cat.items.length;
+          const catPacked = cat.items.filter(i => i.packed).length;
+          const catPct = catTotal > 0 ? Math.round((catPacked / catTotal) * 100) : 0;
+          const accent = getAccentClasses(cat.accent);
+          const isComplete = catTotal > 0 && catPacked === catTotal;
+
+          return `
+            <button
+              type="button"
+              data-scroll-cat="${escapeHtml(cat.id)}"
+              class="snap-start shrink-0 min-w-[148px] sm:min-w-[164px] lg:min-w-0 min-h-[44px] text-left bg-white/8 hover:bg-white/15 active:scale-95 rounded-xl px-3 py-2 transition border border-white/10 group flex flex-col justify-center"
+              title="Jump to ${escapeHtml(cat.title)}"
+            >
+              <div class="flex items-center justify-between gap-2 text-[11px] mb-1.5">
+                <span class="font-semibold text-slate-100 truncate group-hover:text-white">${escapeHtml(cat.title)}</span>
+                <span class="font-mono text-[10px] shrink-0 ${isComplete ? 'text-emerald-400 font-bold' : 'text-slate-300'}">
+                  ${catPacked}/${catTotal}
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full ${isComplete ? 'bg-emerald-400' : accent.bar} transition-all duration-500" style="width: ${catPct}%"></div>
+              </div>
+            </button>
+          `;
+        }).join('');
+      }
+
+      // Filter an item based on active filter & search query
+      function itemMatchesFilter(item, categoryTitle) {
+        if (currentFilter === 'unpacked' && item.packed) return false;
+        if (currentFilter === 'packed' && !item.packed) return false;
+
+        if (searchQuery.trim() !== '') {
+          const q = searchQuery.toLowerCase().trim();
+          const inName = item.name.toLowerCase().includes(q);
+          const inNote = (item.note || '').toLowerCase().includes(q);
+          const inCat = (categoryTitle || '').toLowerCase().includes(q);
+          return inName || inNote || inCat;
+        }
+        return true;
+      }
+
+      // Render All Categories & Items
+      function renderManifest() {
+        updateProgressUI();
+        syncCategorySelects();
+
+        let visibleItemCount = 0;
+
+        const cardsHtml = categories.map(cat => {
+          const filteredItems = cat.items.filter(item => itemMatchesFilter(item, cat.title));
+          visibleItemCount += filteredItems.length;
+
+          // If searching or filtering and this category has 0 matching items, hide the card unless 'all' with empty search
+          if (filteredItems.length === 0 && (searchQuery.trim() !== '' || currentFilter !== 'all')) {
+            return '';
+          }
+
+          const catTotal = cat.items.length;
+          const catPacked = cat.items.filter(i => i.packed).length;
+          const catPct = catTotal > 0 ? Math.round((catPacked / catTotal) * 100) : 0;
+          const isComplete = catTotal > 0 && catPacked === catTotal;
+          const accent = getAccentClasses(cat.accent);
+
+          const itemsHtml = filteredItems.length > 0
+            ? filteredItems.map(item => {
+                const isComplianceHighlight = isItemPortAlert(item);
+                return `
+                  <li
+                    class="group flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:px-3.5 sm:py-2.5 rounded-xl border transition-all ${
+                      item.packed
+                        ? 'bg-sand-100/60 border-transparent text-slate-400'
+                        : isComplianceHighlight
+                          ? 'bg-amber-50/60 border-amber-200/90 hover:border-amber-300'
+                          : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                    }"
+                    data-cat-id="${escapeHtml(cat.id)}"
+                    data-item-id="${escapeHtml(item.id)}"
+                  >
+                    <!-- Left / Top: 44px+ Touch Target Checkbox + Label + Compliance/Note -->
+                    <label class="flex items-start gap-3 flex-1 cursor-pointer select-none min-w-0 min-h-[44px] py-0.5">
+                      <input
+                        type="checkbox"
+                        class="sr-only item-checkbox"
+                        data-cat-id="${escapeHtml(cat.id)}"
+                        data-item-id="${escapeHtml(item.id)}"
+                        ${item.packed ? 'checked' : ''}
+                      />
+                      <span class="print-checkbox checkbox-bounce mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center border-2 shrink-0 ${
+                        item.packed
+                          ? 'bg-emerald-600 border-emerald-600 text-white'
+                          : 'bg-white border-slate-300 group-hover:border-navy-900'
+                      }">
+                        ${item.packed ? `
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        ` : ''}
+                      </span>
+
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="item-label-text text-[15px] sm:text-sm font-semibold leading-snug break-words ${
+                            item.packed ? 'line-through text-slate-400' : 'text-navy-900'
+                          }">
+                            ${escapeHtml(item.name)}
+                          </span>
+                          ${item.qty > 1 ? `
+                            <span class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${
+                              item.packed
+                                ? 'bg-slate-200/70 text-slate-500'
+                                : 'bg-navy-900 text-white'
+                            }">
+                              x${item.qty}
+                            </span>
+                          ` : ''}
+                          ${isComplianceHighlight ? `
+                            <span class="font-mono text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-amber-200/80 text-amber-950">
+                              Port Alert
+                            </span>
+                          ` : ''}
+                        </div>
+                        ${item.note ? `
+                          <p class="text-xs mt-1 leading-relaxed ${
+                            item.packed ? 'text-slate-400/80 line-through' : 'text-slate-500'
+                          }">
+                            ${escapeHtml(item.note)}
+                          </p>
+                        ` : ''}
+                      </div>
+                    </label>
+
+                    <!-- Right / Bottom: Always-Accessible 44x44px Touch Ergonomic Controls (No Print) -->
+                    <div class="no-print flex items-center justify-between sm:justify-end gap-1.5 pl-9 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                      <!-- Quantity Stepper (44x44px buttons) -->
+                      <div class="flex items-center bg-sand-100 rounded-xl border border-slate-200/90 p-0.5">
+                        <button
+                          type="button"
+                          data-action="dec-qty"
+                          data-cat-id="${escapeHtml(cat.id)}"
+                          data-item-id="${escapeHtml(item.id)}"
+                          class="w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-slate-700 hover:bg-white active:scale-90 hover:text-navy-900 font-mono text-base sm:text-xs font-bold flex items-center justify-center transition"
+                          title="Decrease quantity"
+                          aria-label="Decrease quantity"
+                        >−</button>
+                        <span class="font-mono text-xs font-bold px-2 text-navy-900 min-w-[32px] text-center select-none">
+                          x${item.qty}
+                        </span>
+                        <button
+                          type="button"
+                          data-action="inc-qty"
+                          data-cat-id="${escapeHtml(cat.id)}"
+                          data-item-id="${escapeHtml(item.id)}"
+                          class="w-11 h-11 sm:w-8 sm:h-8 rounded-lg text-slate-700 hover:bg-white active:scale-90 hover:text-navy-900 font-mono text-base sm:text-xs font-bold flex items-center justify-center transition"
+                          title="Increase quantity"
+                          aria-label="Increase quantity"
+                        >+</button>
+                      </div>
+
+                      <div class="flex items-center gap-1">
+                        <!-- Edit Item Button (44x44px touch target) -->
+                        <button
+                          type="button"
+                          data-action="edit-item"
+                          data-cat-id="${escapeHtml(cat.id)}"
+                          data-item-id="${escapeHtml(item.id)}"
+                          class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl text-slate-500 hover:text-navy-900 hover:bg-slate-100 active:scale-90 flex items-center justify-center transition"
+                          title="Edit item"
+                          aria-label="Edit item"
+                        >
+                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                          </svg>
+                        </button>
+
+                        <!-- Delete Item Button (44x44px touch target) -->
+                        <button
+                          type="button"
+                          data-action="delete-item"
+                          data-cat-id="${escapeHtml(cat.id)}"
+                          data-item-id="${escapeHtml(item.id)}"
+                          class="w-11 h-11 sm:w-9 sm:h-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-90 flex items-center justify-center transition"
+                          title="Delete item"
+                          aria-label="Delete item"
+                        >
+                          <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                `;
+              }).join('')
+            : `<li class="text-xs text-slate-400 italic py-4 text-center">No items in this category yet. Use the quick-add input below.</li>`;
+
+          return `
+            <article
+              id="section-${escapeHtml(cat.id)}"
+              class="print-card bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden transition-all"
+            >
+              <!-- Collapsible Accordion Category Header (Full header tappable) -->
+              <div
+                data-action="toggle-collapse-cat"
+                data-cat-id="${escapeHtml(cat.id)}"
+                role="button"
+                tabindex="0"
+                aria-expanded="${!cat.collapsed}"
+                class="p-4 sm:p-5 bg-gradient-to-b from-white to-sand-50/60 border-b border-slate-200/80 cursor-pointer select-none active:bg-sand-100/70 transition"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <h2 class="text-base sm:text-lg font-bold text-navy-900 tracking-tight truncate">
+                        ${escapeHtml(cat.title)}
+                      </h2>
+                      <span class="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
+                        isComplete
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : accent.badge
+                      }">
+                        ${catPacked} / ${catTotal} (${catPct}%)
+                      </span>
+                    </div>
+                    ${cat.subtitle ? `<p class="text-xs text-slate-500 mt-0.5">${escapeHtml(cat.subtitle)}</p>` : ''}
+                  </div>
+
+                  <!-- Category Header Controls (No Print) -->
+                  <div class="no-print flex items-center gap-1 shrink-0">
+                    ${catPacked < catTotal ? `
+                      <button
+                        type="button"
+                        data-action="check-all-cat"
+                        data-cat-id="${escapeHtml(cat.id)}"
+                        class="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-sand-100/80 hover:bg-slate-200/70 hover:text-navy-900 active:scale-95 transition"
+                        title="Mark entire category packed"
+                      >
+                        Pack All
+                      </button>
+                    ` : `
+                      <button
+                        type="button"
+                        data-action="uncheck-all-cat"
+                        data-cat-id="${escapeHtml(cat.id)}"
+                        class="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:scale-95 transition"
+                        title="Unpack category"
+                      >
+                        Unpack
+                      </button>
+                    `}
+                    <span
+                      class="w-11 h-11 rounded-xl text-slate-500 flex items-center justify-center transition pointer-events-none"
+                      title="${cat.collapsed ? 'Expand category' : 'Collapse category'}"
+                    >
+                      <svg class="w-5 h-5 transform transition-transform duration-200 ${cat.collapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Mini Category Progress Bar -->
+                <div class="mt-3 w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    class="progress-fill h-full rounded-full ${isComplete ? 'bg-emerald-500' : accent.bar}"
+                    style="width: ${catPct}%"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Category Body (Items + Inline Quick-Add) -->
+              <div class="${cat.collapsed ? 'hidden' : 'block'} p-3 sm:p-4 space-y-3">
+                <ul class="space-y-2.5">
+                  ${itemsHtml}
+                </ul>
+
+                <!-- Inline Quick-Add Item Form inside Category (16px font on mobile, 44px height) -->
+                <form class="no-print quick-add-form pt-2.5 border-t border-slate-100 flex items-center gap-2" data-cat-id="${escapeHtml(cat.id)}">
+                  <input
+                    type="text"
+                    name="quickName"
+                    required
+                    placeholder="+ Add item to ${escapeHtml(cat.title)}..."
+                    class="flex-1 min-h-[44px] px-3.5 py-2 bg-sand-50 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-base sm:text-sm text-navy-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-ocean-500 transition"
+                  />
+                  <input
+                    type="number"
+                    name="quickQty"
+                    min="1"
+                    max="99"
+                    value="1"
+                    class="w-16 min-h-[44px] px-2 py-2 bg-sand-50 focus:bg-white border border-slate-200 rounded-xl text-base sm:text-xs font-mono text-center focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                    title="Quantity"
+                  />
+                  <button
+                    type="submit"
+                    class="min-h-[44px] px-4 py-2 rounded-xl bg-navy-900 hover:bg-navy-800 active:scale-95 text-white text-xs sm:text-sm font-semibold transition shrink-0"
+                  >
+                    Add
+                  </button>
+                </form>
+              </div>
+            </article>
+          `;
+        }).join('');
+
+        categoriesContainer.innerHTML = cardsHtml;
+
+        // Show or Hide Empty State
+        if (visibleItemCount === 0 && (searchQuery.trim() !== '' || currentFilter !== 'all')) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+        }
+
+        // Update Expand/Collapse button text on Desktop, Mobile Header & Mobile Sheet
+        const allCollapsed = categories.length > 0 && categories.every(c => c.collapsed);
+        expandCollapseLabel.textContent = allCollapsed ? 'Expand All' : 'Collapse All';
+        if (mobileExpandCollapseLabel) {
+          mobileExpandCollapseLabel.textContent = allCollapsed ? 'Unfold All' : 'Fold All';
+        }
+        if (sheetExpandCollapseText) {
+          sheetExpandCollapseText.textContent = allCollapsed ? 'Expand All Categories' : 'Collapse All Categories';
+        }
+      }
+
+      // Event Delegation for Category Container (Qty Steppers, Edit, Delete, Collapse, Pack All)
+      categoriesContainer.addEventListener('click', (e) => {
+        const actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+
+        // Prevent bubbling so buttons inside rows or category headers never trigger parent handlers
+        e.stopPropagation();
+
+        const action = actionBtn.getAttribute('data-action');
+        const catId = actionBtn.getAttribute('data-cat-id');
+        const itemId = actionBtn.getAttribute('data-item-id');
+
+        const category = categories.find(c => c.id === catId);
+        if (!category) return;
+
+        if (action === 'toggle-collapse-cat') {
+          category.collapsed = !category.collapsed;
+          saveState();
+          renderManifest();
+          return;
+        }
+
+        if (action === 'check-all-cat') {
+          e.preventDefault();
+          category.items.forEach(i => { i.packed = true; });
+          saveState();
+          renderManifest();
+          showToast(`Packed all items in ${category.title}`);
+          return;
+        }
+
+        if (action === 'uncheck-all-cat') {
+          e.preventDefault();
+          category.items.forEach(i => { i.packed = false; });
+          saveState();
+          renderManifest();
+          showToast(`Unpacked items in ${category.title}`);
+          return;
+        }
+
+        const itemIndex = category.items.findIndex(i => i.id === itemId);
+        if (itemIndex === -1) return;
+        const item = category.items[itemIndex];
+
+        if (action === 'inc-qty') {
+          e.preventDefault();
+          item.qty = Math.min(99, (Number(item.qty) || 1) + 1);
+          saveState();
+          renderManifest();
+        } else if (action === 'dec-qty') {
+          e.preventDefault();
+          item.qty = Math.max(1, (Number(item.qty) || 1) - 1);
+          saveState();
+          renderManifest();
+        } else if (action === 'delete-item') {
+          e.preventDefault();
+          const removedItem = { ...item };
+          const removedCatId = category.id;
+          const removedIdx = itemIndex;
+          category.items.splice(itemIndex, 1);
+          saveState();
+          renderManifest();
+          showToast(`Removed "${removedItem.name}"`, () => {
+            const targetCat = categories.find(c => c.id === removedCatId);
+            if (targetCat) {
+              targetCat.items.splice(Math.min(removedIdx, targetCat.items.length), 0, removedItem);
+              saveState();
+              renderManifest();
+              showToast(`Restored "${removedItem.name}"`);
+            }
+          });
+        } else if (action === 'edit-item') {
+          e.preventDefault();
+          openEditModal(catId, item);
+        }
+      });
+
+      // Keyboard Accessibility for Accordion Headers (Enter / Space)
+      categoriesContainer.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const headerEl = e.target.closest('[data-action="toggle-collapse-cat"]');
+        if (!headerEl || e.target.closest('button, input')) return;
+        e.preventDefault();
+        const catId = headerEl.getAttribute('data-cat-id');
+        const category = categories.find(c => c.id === catId);
+        if (category) {
+          category.collapsed = !category.collapsed;
+          saveState();
+          renderManifest();
+        }
+      });
+
+      // Checkbox change handler
+      categoriesContainer.addEventListener('change', (e) => {
+        const checkbox = e.target.closest('.item-checkbox');
+        if (!checkbox) return;
+
+        e.stopPropagation();
+        const catId = checkbox.getAttribute('data-cat-id');
+        const itemId = checkbox.getAttribute('data-item-id');
+        const category = categories.find(c => c.id === catId);
+        if (!category) return;
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        item.packed = checkbox.checked;
+        saveState();
+        renderManifest();
+      });
+
+      // Inline Quick-Add Form submit inside any category card
+      categoriesContainer.addEventListener('submit', (e) => {
+        const form = e.target.closest('.quick-add-form');
+        if (!form) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        const catId = form.getAttribute('data-cat-id');
+        const category = categories.find(c => c.id === catId);
+        if (!category) return;
+
+        const nameInput = form.querySelector('input[name="quickName"]');
+        const qtyInput = form.querySelector('input[name="quickQty"]');
+        const name = nameInput.value.trim();
+        const qty = Math.max(1, Math.min(99, parseInt(qtyInput.value, 10) || 1));
+
+        if (!name) return;
+
+        category.collapsed = false;
+        category.items.push({
+          id: 'item-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+          name,
+          qty,
+          packed: false,
+          portAlert: name.toLowerCase().includes('camouflage') || name.toLowerCase().includes('non-surge'),
+          note: ''
+        });
+
+        nameInput.value = '';
+        qtyInput.value = '1';
+
+        saveState();
+        renderManifest();
+        showToast(`Added "${name}" to ${category.title}`);
+      });
+
+      // Jump to Category when clicking header mini progress pill
+      headerMiniCategories.addEventListener('click', (e) => {
+        const pill = e.target.closest('[data-scroll-cat]');
+        if (!pill) return;
+        const catId = pill.getAttribute('data-scroll-cat');
+        const category = categories.find(c => c.id === catId);
+        if (category && category.collapsed) {
+          category.collapsed = false;
+          saveState();
+          renderManifest();
+        }
+        const targetEl = document.getElementById('section-' + catId);
+        if (targetEl) {
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      // Filter View Buttons (Synchronizes both Desktop & Mobile Thumb-Zone Filter Bars)
+      function setFilterView(newFilter) {
+        currentFilter = newFilter;
+        filterButtons.forEach(b => {
+          const active = b.getAttribute('data-filter') === currentFilter;
+          const isMobileNav = b.closest('nav') !== null;
+          if (isMobileNav) {
+            b.className = active
+              ? 'filter-btn min-h-[44px] flex-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 bg-navy-900 text-white shadow-2xs active:scale-95'
+              : 'filter-btn min-h-[44px] flex-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 text-slate-600 active:scale-95';
+          } else {
+            b.className = active
+              ? 'filter-btn min-h-[40px] flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 bg-navy-900 text-white shadow-xs active:scale-95'
+              : 'filter-btn min-h-[40px] flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-navy-900 active:scale-95';
+          }
+        });
+        renderManifest();
+      }
+
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          setFilterView(btn.getAttribute('data-filter'));
+        });
+      });
+
+      // Search Input
+      searchInput.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        clearSearchBtn.classList.toggle('hidden', searchQuery.trim() === '');
+        renderManifest();
+      });
+
+      clearSearchBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        searchInput.value = '';
+        searchQuery = '';
+        clearSearchBtn.classList.add('hidden');
+        renderManifest();
+        searchInput.focus();
+      });
+
+      // Reset Filters Button (from Empty State)
+      btnResetFilters.addEventListener('click', (e) => {
+        e.preventDefault();
+        searchInput.value = '';
+        searchQuery = '';
+        clearSearchBtn.classList.add('hidden');
+        setFilterView('all');
+      });
+
+      // Toggle Top Add Item/Category Panel (Desktop)
+      btnToggleAddPanel.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isHidden = addPanel.classList.contains('hidden');
+        addPanel.classList.toggle('hidden');
+        if (isHidden) {
+          addItemName.focus();
+        }
+      });
+
+      // Mobile Quick-Add Bottom Sheet Logic
+      function openMobileAddSheet() {
+        syncCategorySelects();
+        mobileAddSheet.classList.remove('hidden');
+        mobileAddSheet.classList.add('flex');
+        setTimeout(() => sheetItemName.focus(), 50);
+      }
+
+      function closeMobileAddSheet() {
+        mobileAddSheet.classList.add('hidden');
+        mobileAddSheet.classList.remove('flex');
+      }
+
+      btnMobileQuickAdd.addEventListener('click', openMobileAddSheet);
+      mobileAddSheetClose.addEventListener('click', closeMobileAddSheet);
+      mobileAddSheet.addEventListener('click', (e) => {
+        if (e.target === mobileAddSheet) closeMobileAddSheet();
+      });
+
+      formSheetAddItem.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = sheetItemName.value.trim();
+        const catId = sheetItemCategory.value;
+        const qty = Math.max(1, Math.min(99, parseInt(sheetItemQty.value, 10) || 1));
+        const note = sheetItemNote.value.trim();
+        const portAlert = sheetItemAlert ? sheetItemAlert.checked : false;
+
+        if (!name) return;
+        const category = categories.find(c => c.id === catId) || categories[0];
+        if (!category) return;
+
+        category.collapsed = false;
+        category.items.push({
+          id: 'item-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+          name,
+          qty,
+          packed: false,
+          portAlert,
+          note
+        });
+
+        sheetItemName.value = '';
+        sheetItemQty.value = '1';
+        sheetItemNote.value = '';
+        if (sheetItemAlert) sheetItemAlert.checked = false;
+
+        saveState();
+        renderManifest();
+        closeMobileAddSheet();
+        showToast(`Added "${name}" to ${category.title}`);
+      });
+
+      formSheetAddCategory.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = sheetCategoryTitle.value.trim();
+        if (!title) return;
+
+        const accents = ['sky', 'teal', 'rose', 'indigo', 'emerald'];
+        const accent = accents[categories.length % accents.length];
+
+        const newCat = {
+          id: 'cat-' + Date.now(),
+          title,
+          subtitle: 'Custom packing category',
+          accent,
+          collapsed: false,
+          items: []
+        };
+
+        categories.push(newCat);
+        sheetCategoryTitle.value = '';
+        saveState();
+        renderManifest();
+        sheetItemCategory.value = newCat.id;
+        showToast(`Created category "${title}"`);
+      });
+
+      // Mobile More Actions Bottom Sheet Logic
+      function openMobileActionsSheet() {
+        mobileActionsSheet.classList.remove('hidden');
+        mobileActionsSheet.classList.add('flex');
+      }
+
+      function closeMobileActionsSheet() {
+        mobileActionsSheet.classList.add('hidden');
+        mobileActionsSheet.classList.remove('flex');
+      }
+
+      btnMobileMore.addEventListener('click', openMobileActionsSheet);
+      mobileActionsClose.addEventListener('click', closeMobileActionsSheet);
+      mobileActionsSheet.addEventListener('click', (e) => {
+        if (e.target === mobileActionsSheet) closeMobileActionsSheet();
+      });
+
+      // Top Form: Add New Item (Desktop)
+      formAddItem.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = addItemName.value.trim();
+        const catId = addItemCategory.value;
+        const qty = Math.max(1, Math.min(99, parseInt(addItemQty.value, 10) || 1));
+        const note = addItemNote.value.trim();
+        const portAlert = addItemAlert ? addItemAlert.checked : false;
+
+        if (!name) return;
+        const category = categories.find(c => c.id === catId) || categories[0];
+        if (!category) return;
+
+        category.collapsed = false;
+        category.items.push({
+          id: 'item-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+          name,
+          qty,
+          packed: false,
+          portAlert,
+          note
+        });
+
+        addItemName.value = '';
+        addItemQty.value = '1';
+        addItemNote.value = '';
+        if (addItemAlert) addItemAlert.checked = false;
+
+        saveState();
+        renderManifest();
+        showToast(`Added "${name}" to ${category.title}`);
+      });
+
+      // Top Form: Create New Category (Desktop)
+      formAddCategory.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = addCategoryTitle.value.trim();
+        if (!title) return;
+
+        const accents = ['sky', 'teal', 'rose', 'indigo', 'emerald'];
+        const accent = accents[categories.length % accents.length];
+
+        const newCat = {
+          id: 'cat-' + Date.now(),
+          title,
+          subtitle: 'Custom packing category',
+          accent,
+          collapsed: false,
+          items: []
+        };
+
+        categories.push(newCat);
+        addCategoryTitle.value = '';
+        saveState();
+        renderManifest();
+        addItemCategory.value = newCat.id;
+        showToast(`Created category "${title}"`);
+      });
+
+      // Expand / Collapse All Categories (Desktop, Mobile Header, and Mobile Sheet)
+      function toggleAllCategoriesAccordion() {
+        const allCollapsed = categories.length > 0 && categories.every(c => c.collapsed);
+        categories.forEach(c => { c.collapsed = !allCollapsed; });
+        saveState();
+        renderManifest();
+        showToast(allCollapsed ? 'Expanded all categories' : 'Folded all categories');
+      }
+
+      btnExpandCollapse.addEventListener('click', toggleAllCategoriesAccordion);
+      btnMobileExpandCollapse.addEventListener('click', toggleAllCategoriesAccordion);
+      sheetBtnExpandCollapse.addEventListener('click', () => {
+        toggleAllCategoriesAccordion();
+        closeMobileActionsSheet();
+      });
+
+      // Print Manifest
+      function triggerPrintManifest() {
+        categories.forEach(c => { c.collapsed = false; });
+        renderManifest();
+        showToast('Preparing print-ready manifest...');
+        setTimeout(() => window.print(), 150);
+      }
+
+      btnPrint.addEventListener('click', triggerPrintManifest);
+      sheetBtnPrint.addEventListener('click', () => {
+        closeMobileActionsSheet();
+        triggerPrintManifest();
+      });
+
+      // Confirmation Modal Helpers
+      function openConfirmModal(title, description, onConfirm) {
+        modalTitle.textContent = title;
+        modalDescription.textContent = description;
+        pendingConfirmAction = onConfirm;
+        confirmModal.classList.remove('hidden');
+        confirmModal.classList.add('flex');
+      }
+
+      function closeConfirmModal() {
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+        pendingConfirmAction = null;
+      }
+
+      modalCancelBtn.addEventListener('click', closeConfirmModal);
+      confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) closeConfirmModal();
+      });
+
+      modalConfirmBtn.addEventListener('click', () => {
+        if (typeof pendingConfirmAction === 'function') {
+          pendingConfirmAction();
+        }
+        closeConfirmModal();
+      });
+
+      // Check All Items (Mark 100% Packed)
+      function promptCheckAll() {
+        openConfirmModal(
+          'Mark All Items as Packed?',
+          'This will check off every item across all categories in your manifest as packed (100% completion).',
+          () => {
+            categories.forEach(cat => {
+              cat.items.forEach(item => { item.packed = true; });
+            });
+            saveState();
+            renderManifest();
+            showToast('All manifest items marked as packed (100%)');
+          }
+        );
+      }
+
+      if (btnCheckAll) btnCheckAll.addEventListener('click', promptCheckAll);
+      if (sheetBtnCheckAll) {
+        sheetBtnCheckAll.addEventListener('click', () => {
+          closeMobileActionsSheet();
+          promptCheckAll();
+        });
+      }
+
+      // Uncheck All (Reset for Next Trip)
+      function promptUncheckAll() {
+        openConfirmModal(
+          'Uncheck All Packed Items?',
+          'This will reset all checkmarks back to unpacked for your next trip while keeping all your custom items, notes, and quantities intact.',
+          () => {
+            categories.forEach(cat => {
+              cat.items.forEach(item => { item.packed = false; });
+            });
+            saveState();
+            renderManifest();
+            showToast('All items unchecked for next voyage');
+          }
+        );
+      }
+
+      btnUncheckAll.addEventListener('click', promptUncheckAll);
+      sheetBtnUncheck.addEventListener('click', () => {
+        closeMobileActionsSheet();
+        promptUncheckAll();
+      });
+
+      // Restore Pre-loaded Defaults
+      function promptRestoreDefaults() {
+        openConfirmModal(
+          'Restore Default Packing Manifest?',
+          'This will restore the original pre-loaded tropical & cruise categories and remove any custom items or edits you have made.',
+          () => {
+            categories = cloneDefaults();
+            saveState();
+            renderManifest();
+            showToast('Restored default cruise & port manifest');
+          }
+        );
+      }
+
+      btnRestoreDefaults.addEventListener('click', promptRestoreDefaults);
+      sheetBtnRestore.addEventListener('click', () => {
+        closeMobileActionsSheet();
+        promptRestoreDefaults();
+      });
+
+      // Edit Item Modal Logic
+      function openEditModal(catId, item) {
+        syncCategorySelects();
+        editCatId.value = catId;
+        editItemId.value = item.id;
+        editItemName.value = item.name;
+        editItemQty.value = item.qty || 1;
+        editItemCategory.value = catId;
+        editItemNote.value = item.note || '';
+        if (editItemAlert) {
+          editItemAlert.checked = isItemPortAlert(item);
+        }
+
+        editModal.classList.remove('hidden');
+        editModal.classList.add('flex');
+        setTimeout(() => editItemName.focus(), 50);
+      }
+
+      function closeEditModal() {
+        editModal.classList.add('hidden');
+        editModal.classList.remove('flex');
+      }
+
+      editModalClose.addEventListener('click', closeEditModal);
+      editCancelBtn.addEventListener('click', closeEditModal);
+      editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+      });
+
+      formEditItem.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const origCatId = editCatId.value;
+        const targetCatId = editItemCategory.value;
+        const itemId = editItemId.value;
+
+        const origCategory = categories.find(c => c.id === origCatId);
+        if (!origCategory) return;
+
+        const itemIdx = origCategory.items.findIndex(i => i.id === itemId);
+        if (itemIdx === -1) return;
+
+        const updatedItem = {
+          ...origCategory.items[itemIdx],
+          name: editItemName.value.trim() || origCategory.items[itemIdx].name,
+          qty: Math.max(1, Math.min(99, parseInt(editItemQty.value, 10) || 1)),
+          note: editItemNote.value.trim(),
+          portAlert: editItemAlert ? editItemAlert.checked : isItemPortAlert(origCategory.items[itemIdx])
+        };
+
+        if (origCatId === targetCatId) {
+          origCategory.items[itemIdx] = updatedItem;
+        } else {
+          origCategory.items.splice(itemIdx, 1);
+          const targetCategory = categories.find(c => c.id === targetCatId);
+          if (targetCategory) {
+            targetCategory.collapsed = false;
+            targetCategory.items.push(updatedItem);
+          }
+        }
+
+        saveState();
+        renderManifest();
+        closeEditModal();
+        showToast(`Updated "${updatedItem.name}"`);
+      });
+
+      // Generate High-Resolution 180x180 PNG Home Screen Icon & Dynamic Web App Manifest
+      let deferredInstallPrompt = null;
+
+      function hydratePwaIconAndManifest() {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 180;
+          canvas.height = 180;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+
+          // Deep Nautical Navy Rounded Background
+          ctx.fillStyle = '#091526';
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(0, 0, 180, 180, 40) : ctx.rect(0, 0, 180, 180);
+          ctx.fill();
+
+          // Subtle Inner Border Ring
+          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(90, 90, 70, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Scarlet Compass Outer Ring
+          ctx.strokeStyle = '#E11D48';
+          ctx.lineWidth = 10;
+          ctx.beginPath();
+          ctx.arc(90, 90, 52, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Compass Cardinal Ticks
+          ctx.strokeStyle = '#FAF9F5';
+          ctx.lineWidth = 4;
+          [[90, 26, 90, 36], [90, 144, 90, 154], [26, 90, 36, 90], [144, 90, 154, 90]].forEach(([x1, y1, x2, y2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          });
+
+          // Compass Needle (Sky Blue & Warm Sand)
+          ctx.fillStyle = '#38BDF8';
+          ctx.beginPath();
+          ctx.moveTo(118, 62);
+          ctx.lineTo(100, 100);
+          ctx.lineTo(80, 80);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = '#FAF9F5';
+          ctx.beginPath();
+          ctx.moveTo(62, 118);
+          ctx.lineTo(100, 100);
+          ctx.lineTo(80, 80);
+          ctx.closePath();
+          ctx.fill();
+
+          // Center Pivot Dot
+          ctx.fillStyle = '#091526';
+          ctx.beginPath();
+          ctx.arc(90, 90, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          const pngDataUrl = canvas.toDataURL('image/png');
+          const appleIconEl = document.getElementById('apple-touch-icon-link');
+          const faviconEl = document.getElementById('favicon-link');
+          if (appleIconEl) appleIconEl.href = pngDataUrl;
+          if (faviconEl) {
+            faviconEl.type = 'image/png';
+            faviconEl.href = pngDataUrl;
+          }
+          if (installModalIconPreview) {
+            installModalIconPreview.src = pngDataUrl;
+          }
+
+          // Inject Inline Web App Manifest for Android / Chrome / Modern Safari PWA support
+          const manifestObj = {
+            name: 'Voyage & Port Packing Manifest',
+            short_name: 'Voyage Manifest',
+            description: 'Interactive cruise and tropical port packing checklist with completion bar.',
+            start_url: '.',
+            display: 'standalone',
+            background_color: '#FAF9F5',
+            theme_color: '#0f172a',
+            icons: [
+              { src: pngDataUrl, sizes: '180x180', type: 'image/png', purpose: 'any maskable' },
+              { src: pngDataUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+            ]
+          };
+          const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+          const manifestUrl = URL.createObjectURL(manifestBlob);
+          const manifestLink = document.getElementById('pwa-manifest-link');
+          if (manifestLink) manifestLink.href = manifestUrl;
+        } catch (err) {
+          console.warn('PWA icon canvas generation skipped:', err);
+        }
+      }
+
+      // Listen for native beforeinstallprompt (Android Chrome / Desktop Edge/Chrome)
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (btnNativePwaPrompt) {
+          btnNativePwaPrompt.classList.remove('hidden');
+          btnNativePwaPrompt.classList.add('flex');
+        }
+      });
+
+      if (btnNativePwaPrompt) {
+        btnNativePwaPrompt.addEventListener('click', async () => {
+          if (!deferredInstallPrompt) return;
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          btnNativePwaPrompt.classList.add('hidden');
+        });
+      }
+
+      // Open / Close "Install / Save App to Phone" Modal
+      function openInstallModal() {
+        if (!installModal) return;
+        installModal.classList.remove('hidden');
+        installModal.classList.add('flex');
+      }
+
+      function closeInstallModal() {
+        if (!installModal) return;
+        installModal.classList.add('hidden');
+        installModal.classList.remove('flex');
+      }
+
+      if (btnInstallApp) btnInstallApp.addEventListener('click', openInstallModal);
+      if (btnMobileInstallHeader) btnMobileInstallHeader.addEventListener('click', openInstallModal);
+      if (btnFooterInstall) btnFooterInstall.addEventListener('click', openInstallModal);
+      if (sheetBtnInstall) {
+        sheetBtnInstall.addEventListener('click', () => {
+          closeMobileActionsSheet();
+          openInstallModal();
+        });
+      }
+      if (installModalClose) installModalClose.addEventListener('click', closeInstallModal);
+      if (installModalDone) installModalDone.addEventListener('click', closeInstallModal);
+      if (installModal) {
+        installModal.addEventListener('click', (e) => {
+          if (e.target === installModal) closeInstallModal();
+        });
+      }
+
+      // Download Self-Contained Standalone HTML File for Local Phone Saving or Hosting
+      function downloadStandaloneHtmlFile() {
+        try {
+          const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'voyage-packing-manifest.html';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          showToast('Downloaded voyage-packing-manifest.html');
+        } catch (err) {
+          console.error('Download failed:', err);
+          showToast('Unable to trigger download in this preview frame');
+        }
+      }
+
+      if (btnDownloadHtml) {
+        btnDownloadHtml.addEventListener('click', downloadStandaloneHtmlFile);
+      }
+
+      // Interactive Button & Event Handler Self-Test Diagnostics Suite
+      function runButtonDiagnostics(silentOnLoad) {
+        const requiredElements = [
+          'overall-progress-bar',
+          'header-mini-categories',
+          'categories-container',
+          'search-input',
+          'clear-search-btn',
+          'btn-toggle-add-panel',
+          'form-add-item',
+          'form-add-category',
+          'btn-install-app',
+          'btn-mobile-install-header',
+          'install-modal',
+          'btn-download-html',
+          'btn-expand-collapse',
+          'btn-mobile-expand-collapse',
+          'btn-print',
+          'btn-check-all',
+          'btn-uncheck-all',
+          'btn-restore-defaults',
+          'btn-mobile-quick-add',
+          'btn-mobile-more',
+          'confirm-modal',
+          'edit-modal'
+        ];
+
+        const missing = requiredElements.filter(id => !document.getElementById(id));
+        const stepperCount = document.querySelectorAll('[data-action="inc-qty"], [data-action="dec-qty"]').length;
+        const editDeleteCount = document.querySelectorAll('[data-action="edit-item"], [data-action="delete-item"]').length;
+        const filterBtnCount = document.querySelectorAll('.filter-btn').length;
+        const quickAddCount = document.querySelectorAll('.quick-add-form').length;
+
+        const isHealthy = missing.length === 0 && filterBtnCount === 6 && categories.length > 0;
+
+        if (diagnosticsBadgeLabel) {
+          diagnosticsBadgeLabel.textContent = isHealthy
+            ? `Self-Test: 100% OK (${stepperCount + editDeleteCount + filterBtnCount} controls)`
+            : `Self-Test: Check ${missing.length} issue(s)`;
+        }
+
+        if (!silentOnLoad) {
+          showToast(
+            isHealthy
+              ? `Diagnostics Passed: ${categories.length} categories, ${quickAddCount} quick-add forms, ${stepperCount} steppers & ${filterBtnCount} filters verified.`
+              : `Diagnostics Alert: Missing ${missing.join(', ')}`
+          );
+        }
+      }
+
+      if (btnRunDiagnostics) {
+        btnRunDiagnostics.addEventListener('click', () => runButtonDiagnostics(false));
+      }
+      if (btnFooterDiagnostics) {
+        btnFooterDiagnostics.addEventListener('click', () => runButtonDiagnostics(false));
+      }
+      if (sheetBtnDiagnostics) {
+        sheetBtnDiagnostics.addEventListener('click', () => {
+          closeMobileActionsSheet();
+          runButtonDiagnostics(false);
+        });
+      }
+
+      // Escape key closes active modal
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeConfirmModal();
+          closeEditModal();
+          closeMobileAddSheet();
+          closeMobileActionsSheet();
+          closeInstallModal();
+        }
+      });
+
+      // Initialize Application
+      loadState();
+      hydratePwaIconAndManifest();
+      renderManifest();
+      runButtonDiagnostics(true);
+    })();
+  </script>
+</body>
+</html>
